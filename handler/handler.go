@@ -10,103 +10,104 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// gets the entire user list
 func GetUsers(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to get all users from the database
 	users, err := database.GetUsers()
 	if err != nil {
-		http.Error(w, "Failed to fetch users", http.StatusInternalServerError)
+		// if fetching users fails
+		RespondJSON(w, http.StatusInternalServerError, nil, "Failed to fetch users", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(users)
+	RespondJSON(w, http.StatusOK, users, "Users fetched successfully", nil)
 }
 
+// getting the user for single user based on id
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to get a single user by ID from the database
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		// if the request id is invalid
+		RespondJSON(w, http.StatusBadRequest, nil, "Invalid user ID", err)
 		return
 	}
 
 	user, err := database.GetUser(uint(userID))
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		// if DB fails to retrive the user
+		RespondJSON(w, http.StatusInternalServerError, nil, "Failed to fetch user", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	RespondJSON(w, http.StatusOK, user, "User fetched successfully", nil)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to create a new user in the database
 	w.Header().Set("Content-Type", "application/json")
+	// Decode the request body to get the new user information
 	var newUser database.User
 	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		// if the request body is invalid
+		RespondJSON(w, http.StatusBadRequest, nil, "Invalid request body", err)
 		return
 	}
 
+	// Create the user in DB
 	createdUser, err := database.CreateUser(newUser)
 	if err != nil {
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		// if creating the user fails from DB
+		RespondJSON(w, http.StatusInternalServerError, nil, "Failed to create user", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdUser)
+	RespondJSON(w, http.StatusCreated, createdUser, "User created successfully", nil)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to update a user by ID in the database
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		// if the request id is invalid
+		RespondJSON(w, http.StatusBadRequest, nil, "Invalid user ID", err)
 		return
 	}
 
 	var updatedUser database.User
 	err = json.NewDecoder(r.Body).Decode(&updatedUser)
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		// if the request body is invalid
+		RespondJSON(w, http.StatusBadRequest, nil, "Invalid request body", err)
 		return
 	}
 
 	updatedUser.ID = uint(userID)
-
+	// Update the user in DB
 	updatedUser, err = database.UpdateUser(updatedUser)
 	if err != nil {
-		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		RespondJSON(w, http.StatusInternalServerError, nil, "Failed to update user", err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedUser)
+	RespondJSON(w, http.StatusOK, updatedUser, "User updated successfully", nil)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	// Implement logic to delete a user by ID from the database
 	vars := mux.Vars(r)
 	userID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(w, "Invalid user ID", http.StatusBadRequest)
+		// if the request id is invalid
+		RespondJSON(w, http.StatusBadRequest, nil, "Invalid user ID", err)
 		return
 	}
 
+	// Delete the user in DB
 	err = database.DeleteUser(uint(userID))
 	if err != nil {
-		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		RespondJSON(w, http.StatusInternalServerError, nil, "Failed to delete user", err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	// if we user http.StatusNoContent no response is retured
+	RespondJSON(w, http.StatusOK, nil, "User deleted successfully", nil)
 }
